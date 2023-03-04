@@ -1,0 +1,190 @@
+<html><html lang="pt-br">
+    <meta charset="utf-8">    <title>Open Custom Puzzle</title>
+    <script src="jquery.min.js"></script>
+<head>
+</head>
+<body>
+<img id=myimgblank src='t00.png' width=auto height=auto hidden ><br/>
+<img id=myimg src='lotus.jpg' width=auto height=auto hidden ><br/>
+  <div id=scrambled></div>
+  <hr>
+  <div id=puzzle></div>
+  <div id=tmp></div>
+<ht>
+<div id=rodape></div>
+<script>
+
+//function pre_process(){
+ const img = new Image();
+ img.crossOrigin="anonymous";
+ //img.src='tux.png';
+ //document.getElementById('myimg').src='tux.png';
+ console.debug(document.getElementById('myimg'));
+ document.getElementById('myimg').crossOrigin="anonymous";
+ rows=4;
+ cols=4;
+ imgs=new Array(); //image array
+ w=myimg.width;
+ h=myimg.height;
+ ws=Math.floor(w/cols);//width step
+ hs=Math.floor(h/rows);//height step
+ //console.debug(ws,hs);
+ /**/
+ for(i=0;i<rows;i++){ //create imgs positions array
+  for(j=0;j<cols;j++){
+    n  =i*cols+j+1;
+    startx=ws*j;
+    starty=hs*i;
+    imgs[imgs.length]=[startx,starty,n];
+  }
+ }
+ img_solved=[].concat(imgs);
+ imgs.sort(function(a, b){return 0.5 - Math.random()});  //scramble images
+ for(i=0;i<rows;i++){
+  for(j=0;j<cols;j++){
+    n  =i*cols+j;
+    n1 =i*cols+j+1;
+    //adds scrambled images
+    $("#scrambled").append('<canvas id=s'+n1+' class=scrimg width="200" height="200" slot=sl'+imgs[n][2]+'></canvas>');
+    ctx = document.getElementById('s'+n1).getContext('2d');
+    ctx.drawImage(myimg, imgs[n][0], imgs[n][1], ws, hs, 0, 0, 200, 200);
+    //adds blank images to puzzle area
+    $("#puzzle").append('<canvas id=p'+n1+' class=puzimg width="200" height="200" slot=sl0 ></canvas>');
+    ctx = document.getElementById('p'+n1).getContext('2d');
+    ctx.drawImage(myimgblank, 0, 0, w, h, 0, 0, 200, 200)
+  }
+  $("#scrambled").append('<br/>');
+  $("#puzzle").append('<br/>');
+ }
+console.debug(imgs);
+
+origin='';
+destiny='';
+scrimgsel=false;
+puzimgsel=false;
+$(document).ready(onload());
+function onload(){
+ //alert('JQuery funcionando!');  //tests pourposes
+ $('.scrimg').click(function(){
+    $('#rodape').html(this.id);
+    $('#rodape').append(' - '+this.slot);
+    console.debug(this);
+    if (scrimgsel){//deseleciona imagem
+      $("#"+this.id).css("border","1px solid yellow");
+      scrimgsel=false;
+    }else if (puzimgsel){ //transfere imagem para cá
+      destiny=this.id;
+      swapImages(origin,destiny);
+      $("#"+origin).css("border","1px solid yellow");
+      puzimgsel=false;
+    }else{ //select this to origin
+      origin=this.id;
+      $("#"+this.id).css("border","5px solid blue");
+      scrimgsel=true;
+      console.debug('scrimgsel:true');
+    }    
+ });
+ 
+   $('.puzimg').click(function(){
+    $('#rodape').append(' - '+this.id);
+    $('#rodape').append(' - '+this.slot);
+    if(puzimgsel){    //deseleciona img
+      $("#"+this.id).css("border","0px solid blue");
+      puzimgsel=false;
+    }else if(scrimgsel){ //transfere para cá
+      destiny=this.id;
+      swapImages(origin,destiny);
+      $("#"+origin).css("border","0px solid blue");
+      scrimgsel=false;
+      setTimeout(function(){
+        if (isSolved()){
+        alert('parabéns!'); //Congratulations message
+        }
+      },800);
+    }else{
+      origin=this.id;
+      $("#"+this.id).css("border","5px solid blue");
+      puzimgsel=true;
+    }
+   }); 
+}
+
+  function swapImages(origin,destiny){ //give images id's only
+    tmp =$('#'+origin ).attr('slot');
+    tmp2=$('#'+destiny).attr('slot');
+    $('#'+destiny).attr('slot',tmp );
+    $('#'+origin ).attr('slot',tmp2);
+    if (tmp2=='sl0' && tmp!='sl0'){ //if destiny is blank
+     canvas_setimg(myimgblank,origin); //simply puts myimg->origin
+     sl=parseInt(tmp.substring(2))-1; 
+     canvas_setimgbyarray(myimg,destiny,img_solved,sl);
+    }else if(tmp=='sl0' && tmp2!='sl0'){ //if origin is blank
+     canvas_setimg(myimgblank,destiny);
+     sl=parseInt(tmp2.substring(2))-1; console.debug(sl);
+     canvas_setimgbyarray(myimg,origin,img_solved,sl);
+    }else{
+    }
+  }
+  
+  function canvas_setimg(img,canvas){
+     ctx = document.getElementById(canvas).getContext('2d');
+     ctx.drawImage(img, 0, 0, w, h, 0, 0, 200, 200)
+  }
+  
+  function canvas_setimgbyarray(img,canvas,array,slice){
+     console.debug(slice);
+     cobj=document.getElementById(canvas);//canvas object
+     ctx = cobj.getContext('2d');
+     ctx.clearRect(0, 0, cobj.width, cobj.height);
+     console.debug(array[slice][0], array[slice][1])
+     ctx.drawImage(img, array[slice][0], array[slice][1],ws,hs, 0,0,200,200);  
+  }
+  
+  function isSolved(){ //verify if puzzle is correctly assembled
+    tmp=true;
+    console.debug('Apuração:');
+    for(var i=1;i<=rows*cols;i++){
+      puzslot=$("#p"+i).attr('slot'); //puzzle image slot(image id)
+      arrslot=img_solved[i-1][2]; //array image slot id
+      console.debug(puzslot,'=',arrslot,', ');
+      if ( puzslot.substring(2)!=arrslot ){
+        tmp=false;
+        //create a tmp canvas
+        $("#tmp").html('<canvas id=tmpc width=200 height=200 hidden></canvas>');
+        ctx = document.getElementById('tmpc').getContext('2d');
+        ctx.drawImage(myimg, imgs[arrslot][0], imgs[arrslot][1], ws, hs, 0, 0, 200, 200);  
+        c=compare2canvas('p'+i,'tmpc');//compare the pixels
+        if (c<90){        break;
+        }else{tmp=true}
+      }
+    }
+    return tmp;
+  }
+  
+ function compare2canvas(c1,c2){ //return similitude percent
+   perc=0;                       //not working by now
+   console.debug('comparacao');
+   c1=document.getElementById(c1);
+   c1.crossOrigin="anonymous";
+   console.debug(c1);
+   var ctx1 = c1.getContext('2d');
+   ctx1.crossOrigin="anonymous";
+   //console.debug(equal(c1,c2,100));
+   /*var imageData1=c1.getImageData(0, 0, ctx1.width, ctx1.height);
+   var pixels1 = imageData1.data;
+
+   var ctx2 = c2.getContext('2d');
+   var imageData2=ctx2.getImageData(0, 0, c2.width, c2.height);
+   var pixels2 = imageData2.data;
+   ok=0;
+   all=pixels1.length;
+   console.debug(ok,all);
+   for(var i = 0; i<pixels1.length; i++){
+     if (pixels1[i]==pixels2[i]){  ok+=1; }
+    }*/
+    return perc;
+ }  
+  
+</script>
+</body>
+</html>
