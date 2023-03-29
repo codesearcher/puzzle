@@ -1,7 +1,7 @@
 # puzzle
 <h5>Open Custom Puzzle</h5>
 Make your own puzzle!</br>
-<h6>It's simple. There are 2 methods:</h6></br>
+<h6> It's simple. There are 2 methods:</h6></br>
 Version 1 - Create the pieces of your puzzle and adapt indez.html file</br>
 Version 2 - Just copy your desired image into 'Version2' folder and adapt index.html (this version doesn't need to edit (create puzzle pieces of your) image.</br></br>
 
